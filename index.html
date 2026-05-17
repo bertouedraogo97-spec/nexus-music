@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NEXUS MUSIC — Entité Cognitive Musicale</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet" />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #050508;
+  --surface: #0c0c14;
+  --border: rgba(255,255,255,0.06);
+  --text: #e8e8f0;
+  --muted: rgba(232,232,240,0.4);
+  --accent: #00FFD1;
+  --accent2: #FF6BFF;
+  --accent3: #FFB800;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.nexus-root {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(0,255,209,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(255,107,255,0.05) 0%, transparent 60%),
+    var(--bg);
+  position: relative;
+}
+
+/* PARTICLES */
+.particle {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  animation: floatP var(--dur) var(--delay) infinite;
+  opacity: 0;
+}
+@keyframes floatP {
+  0%   { opacity: 0; transform: translateY(0) scale(0.5); }
+  20%  { opacity: 0.5; }
+  80%  { opacity: 0.2; }
+  100% { opacity: 0; transform: translateY(-80px) scale(1.2); }
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 40px 20px 80px;
+  position: relative;
+  z-index: 1;
+}
+
+/* HEADER */
+.header { text-align: center; margin-bottom: 52px; }
+.logo-eyebrow {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; letter-spacing: 0.35em;
+  color: var(--accent); text-transform: uppercase;
+  margin-bottom: 14px; opacity: 0.8;
+}
+.logo-title {
+  font-size: clamp(44px, 10vw, 80px);
+  font-weight: 800; letter-spacing: -0.04em; line-height: 0.9;
+  background: linear-gradient(135deg, #fff 0%, var(--accent) 40%, var(--accent2) 80%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; margin-bottom: 8px;
+}
+.logo-sub {
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  color: var(--muted); letter-spacing: 0.2em; margin-bottom: 20px;
+}
+.status-bar {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(0,255,209,0.06); border: 1px solid rgba(0,255,209,0.15);
+  border-radius: 100px; padding: 6px 16px;
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  color: var(--accent); letter-spacing: 0.12em;
+}
+.dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent); animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
+
+/* SECTION LABEL */
+.section-label {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  letter-spacing: 0.3em; color: var(--muted);
+  text-transform: uppercase; margin-bottom: 14px;
+}
+
+/* AGENT GRID */
+.agent-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+  margin-bottom: 40px;
+}
+.agent-node {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px 8px; text-align: center;
+  transition: all 0.3s; position: relative; overflow: hidden;
+}
+.agent-node::before {
+  content:''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, var(--c), transparent);
+  opacity: 0; transition: opacity 0.3s;
+}
+.agent-node.active::before { opacity: 0.08; }
+.agent-node.active {
+  border-color: var(--c);
+  box-shadow: 0 0 0 1px var(--c), 0 0 20px rgba(0,0,0,0.4);
+}
+.agent-node.pulsing { animation: agentPulse 0.6s ease; }
+@keyframes agentPulse {
+  0%{transform:scale(1)} 50%{transform:scale(1.06)} 100%{transform:scale(1)}
+}
+.agent-icon { font-size: 20px; color: var(--c); margin-bottom: 4px; }
+.agent-label {
+  font-size: 8px; font-family: 'DM Mono', monospace;
+  letter-spacing: 0.1em; color: var(--muted);
+}
+.agent-node.active .agent-label { color: var(--c); }
+.agent-ring {
+  position: absolute; inset: -2px; border-radius: 13px;
+  border: 1px solid var(--c); animation: ringP 1.5s infinite; pointer-events: none;
+}
+@keyframes ringP { 0%,100%{opacity:0.5;transform:scale(1)} 50%{opacity:0;transform:scale(1.05)} }
+
+/* DIVIDER */
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+  margin: 36px 0;
+}
+
+/* PRESETS */
+.presets-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
+.preset-btn {
+  appearance: none; -webkit-appearance: none;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 100px; padding: 8px 16px;
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  color: rgba(232,232,240,0.65); cursor: pointer;
+  transition: all 0.2s; outline: none;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.preset-btn:hover {
+  border-color: rgba(0,255,209,0.5); color: var(--accent);
+  background: rgba(0,255,209,0.07); transform: translateY(-1px);
+}
+.preset-btn.selected {
+  border-color: var(--accent); color: var(--accent);
+  background: rgba(0,255,209,0.1);
+}
+
+/* INPUT */
+.input-wrapper {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; overflow: hidden; margin-bottom: 28px;
+  transition: border-color 0.3s;
+}
+.input-wrapper:focus-within { border-color: rgba(0,255,209,0.3); }
+#prompt-input {
+  width: 100%; min-height: 100px; background: transparent;
+  border: none; outline: none; color: var(--text);
+  font-family: 'Syne', sans-serif; font-size: 16px;
+  line-height: 1.6; padding: 20px; resize: none;
+}
+#prompt-input::placeholder { color: var(--muted); }
+.input-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 20px; border-top: 1px solid var(--border);
+}
+.input-hint { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); }
+.generate-btn {
+  appearance: none; -webkit-appearance: none;
+  background: linear-gradient(135deg, var(--accent), #00c8a8);
+  border: none; border-radius: 10px; padding: 10px 24px;
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px;
+  color: #050508; cursor: pointer; transition: all 0.2s; outline: none;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.generate-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,255,209,0.3); }
+.generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* WAVEFORM */
+.waveform-section { height: 56px; display: flex; align-items: center; gap: 2px; margin-bottom: 24px; }
+.wave-bar {
+  flex: 1; border-radius: 2px; min-height: 3px; opacity: 0.2;
+  background: linear-gradient(to top, var(--accent), var(--accent2));
+  transition: height 0.3s;
+}
+.waveform-section.playing .wave-bar {
+  opacity: 0.75;
+  animation: waveP 0.8s ease-in-out infinite alternate;
+}
+@keyframes waveP { from{transform:scaleY(0.3);opacity:0.4} to{transform:scaleY(1);opacity:0.9} }
+
+/* PHASE */
+.phase-bar {
+  display: none; align-items: center; gap: 10px;
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  color: var(--accent); letter-spacing: 0.15em;
+  animation: flicker 2s infinite; margin-bottom: 16px;
+}
+.phase-bar.visible { display: flex; }
+@keyframes flicker { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* MUSICGEN PLAYER */
+.musicgen-section {
+  background: var(--surface); border: 1px solid rgba(0,184,255,0.2);
+  border-radius: 16px; overflow: hidden; margin-bottom: 28px;
+  display: none;
+}
+.musicgen-section.visible { display: block; }
+.musicgen-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; border-bottom: 1px solid rgba(0,184,255,0.1);
+}
+.musicgen-title {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  letter-spacing: 0.25em; color: #00B8FF;
+}
+.mg-badge {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  border-radius: 100px; padding: 3px 10px; letter-spacing: 0.12em;
+}
+.mg-badge.loading { color: #FFB800; background: rgba(255,184,0,0.08); border: 1px solid rgba(255,184,0,0.25); animation: flicker 1.5s infinite; }
+.mg-badge.ready   { color: #00FFD1; background: rgba(0,255,209,0.08); border: 1px solid rgba(0,255,209,0.2); }
+.mg-badge.error   { color: #FF4F6B; background: rgba(255,79,107,0.08); border: 1px solid rgba(255,79,107,0.2); }
+.musicgen-body { padding: 20px; }
+.mg-loading { display: flex; align-items: center; gap: 12px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 12px; }
+.mg-spinner { width: 20px; height: 20px; border: 2px solid rgba(0,184,255,0.2); border-top-color: #00B8FF; border-radius: 50%; animation: spin 1s linear infinite; flex-shrink: 0; }
+@keyframes spin { to{transform:rotate(360deg)} }
+.mg-error { color: #FF4F6B; font-family: 'DM Mono', monospace; font-size: 12px; }
+#nexus-audio { width: 100%; height: 40px; border-radius: 8px; display: none; margin-bottom: 12px; }
+.download-btn {
+  appearance: none; -webkit-appearance: none;
+  display: none; align-items: center; gap: 6px;
+  background: rgba(0,255,209,0.08); border: 1px solid rgba(0,255,209,0.25);
+  border-radius: 8px; padding: 8px 16px;
+  font-family: 'DM Mono', monospace; font-size: 11px; color: var(--accent);
+  cursor: pointer; text-decoration: none; transition: all 0.2s; outline: none;
+}
+.download-btn.visible { display: inline-flex; }
+.download-btn:hover { background: rgba(0,255,209,0.15); transform: translateY(-1px); }
+
+/* OUTPUT */
+.output-section {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; overflow: hidden; margin-bottom: 40px;
+}
+.output-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; border-bottom: 1px solid var(--border);
+}
+.output-title { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.25em; color: var(--muted); }
+.output-badge {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  color: var(--accent); background: rgba(0,255,209,0.08);
+  border: 1px solid rgba(0,255,209,0.2); border-radius: 100px;
+  padding: 3px 10px; letter-spacing: 0.12em; display: none;
+}
+.output-badge.visible { display: inline-block; }
+.output-body {
+  padding: 24px; min-height: 180px; max-height: 480px; overflow-y: auto;
+  font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 300;
+  line-height: 1.8; color: var(--text); white-space: pre-wrap;
+  scrollbar-width: thin; scrollbar-color: rgba(0,255,209,0.2) transparent;
+}
+.output-placeholder { color: var(--muted); font-style: italic; font-size: 13px; text-align: center; padding: 40px 0; }
+
+/* MODULES */
+.modules-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.module-btn {
+  appearance: none; -webkit-appearance: none;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 100px; padding: 8px 14px;
+  font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted);
+  cursor: pointer; transition: all 0.2s; outline: none;
+  display: inline-flex; align-items: center; gap: 5px;
+  animation: pillIn 0.4s forwards; opacity: 0;
+}
+@keyframes pillIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.module-btn:hover:not(:disabled) {
+  border-color: rgba(255,107,255,0.5); color: var(--accent2);
+  background: rgba(255,107,255,0.06); transform: translateY(-1px);
+}
+.module-btn.active { border-color: var(--accent2); color: var(--accent2); background: rgba(255,107,255,0.1); }
+.module-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.pill-spinner {
+  width: 10px; height: 10px;
+  border: 1.5px solid rgba(255,107,255,0.3); border-top-color: var(--accent2);
+  border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0;
+}
+
+/* BTN SPINNER */
+.btn-spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(5,5,8,0.3); border-top-color: #050508;
+  border-radius: 50%; animation: spin 0.7s linear infinite;
+}
+</style>
+</head>
+<body>
+<div class="nexus-root">
+  <div id="particles"></div>
+
+  <div class="container">
+
+    <!-- HEADER -->
+    <header class="header">
+      <div class="logo-eyebrow">Entité Cognitive Musicale · v4.0</div>
+      <div class="logo-title">NEXUS MUSIC</div>
+      <div class="logo-sub">CORE · AUTONOMOUS MUSIC INTELLIGENCE SYSTEM</div>
+      <div class="status-bar">
+        <div class="dot"></div>
+        <span>SYSTÈME EN LIGNE · 8 AGENTS ACTIFS</span>
+      </div>
+    </header>
+
+    <!-- AGENTS -->
+    <div class="section-label">◈ Architecture Multi-Agents</div>
+    <div class="agent-grid" id="agent-grid"></div>
+
+    <div class="divider"></div>
+
+    <!-- PRESETS -->
+    <div class="section-label">✦ Prompts créatifs</div>
+    <div class="presets-row" id="presets-row"></div>
+
+    <!-- INPUT -->
+    <div class="input-wrapper">
+      <textarea id="prompt-input" placeholder="Décris l'univers musical à créer... (ex: « une trap spatiale mélancolique avec des cordes ethniques »)"></textarea>
+      <div class="input-footer">
+        <span class="input-hint">Appuie sur le bouton pour générer</span>
+        <button class="generate-btn" id="generate-btn" onclick="handleGenerate()">
+          ◈ ACTIVER NEXUS
+        </button>
+      </div>
+    </div>
+
+    <!-- WAVEFORM -->
+    <div class="waveform-section" id="waveform"></div>
+
+    <!-- PHASE -->
+    <div class="phase-bar" id="phase-bar">
+      <div class="dot"></div>
+      <span id="phase-text">ANALYSE DU PROMPT...</span>
+    </div>
+
+    <!-- MUSICGEN PLAYER -->
+    <div class="musicgen-section" id="musicgen-section">
+      <div class="musicgen-header">
+        <span class="musicgen-title">◈ MUSICGEN IA · AUDIO RÉEL</span>
+        <span class="mg-badge" id="mg-badge"></span>
+      </div>
+      <div class="musicgen-body">
+        <div class="mg-loading" id="mg-loading" style="display:none">
+          <div class="mg-spinner"></div>
+          <span>MusicGen compose votre musique (~30 secondes)...</span>
+        </div>
+        <div class="mg-error" id="mg-error" style="display:none"></div>
+        <audio id="nexus-audio" controls></audio>
+        <a class="download-btn" id="download-btn" download="nexus-music.mp3" target="_blank">↓ Télécharger MP3</a>
+      </div>
+    </div>
+
+    <!-- OUTPUT -->
+    <div class="output-section">
+      <div class="output-header">
+        <span class="output-title">◉ SORTIE NEXUS-MUSIC CORE</span>
+        <span class="output-badge" id="output-badge">COMPLÉTÉ</span>
+      </div>
+      <div class="output-body" id="output-body">
+        <div class="output-placeholder">Activez NEXUS pour générer votre univers musical...</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- MODULES -->
+    <div class="section-label">❋ Modules disponibles — clique pour générer</div>
+    <div class="modules-grid" id="modules-grid"></div>
+
+  </div>
+</div>
+
+<script>
+const AGENTS = [
+  { id:"composer",    icon:"♩", label:"COMPOSER",     color:"#00FFD1" },
+  { id:"lyricist",   icon:"✦", label:"LYRICIST",     color:"#FF6BFF" },
+  { id:"beatmaker",  icon:"◈", label:"BEATMAKER",    color:"#FFB800" },
+  { id:"sound",      icon:"◎", label:"SOUND",        color:"#00B8FF" },
+  { id:"emotion",    icon:"❋", label:"EMOTION-AI",   color:"#FF4F6B" },
+  { id:"trend",      icon:"⟁", label:"TREND",        color:"#A8FF78" },
+  { id:"mix",        icon:"≋", label:"MIX-MASTER",   color:"#FF8C42" },
+  { id:"voice",      icon:"◉", label:"VOICE ENGINE", color:"#C77DFF" },
+];
+
+const PRESETS = [
+  { label:"Cyberpunk africain spirituel",          emoji:"🌍" },
+  { label:"Rêve numérique mélancolique",           emoji:"🌌" },
+  { label:"Jazz orchestral × Amapiano × Synthwave",emoji:"🎷" },
+  { label:"Trap quantique méditative",             emoji:"⚛️" },
+  { label:"Afrobeat futuriste nocturne",           emoji:"🌙" },
+  { label:"Bossa nova cybernétique douce",         emoji:"🤖" },
+];
+
+const MODULES = [
+  { label:"Générateur de beats",  icon:"◈", style:"trap",    prompt:"Génère un beat original détaillé : pattern drums, BPM, groove, structure rythmique, style et inspiration." },
+  { label:"Clonage vocal",        icon:"◉", style:"ambient", prompt:"Décris un profil vocal IA complet : timbre, tessiture, émotions, techniques de traitement et imitation vocale." },
+  { label:"Mixage auto",          icon:"≋", style:"cyber",   prompt:"Génère un plan de mixage automatisé : niveaux, EQ, compression, panoramique, side-chain, bus de traitement." },
+  { label:"Paroles IA",           icon:"✦", style:"jazz",    prompt:"Compose des paroles originales : couplets, refrain, pont, storytelling émotionnel fort et hook viral." },
+  { label:"DJ intelligent",       icon:"⟁", style:"afro",    prompt:"Crée un set DJ intelligent : enchaînement, transitions harmoniques, montée en énergie, drops, techniques avancées." },
+  { label:"Suppression bruit",    icon:"◎", style:"ambient", prompt:"Décris un processus de suppression de bruit IA : fréquences ciblées, algorithmes, préservation du signal utile." },
+  { label:"Amélioration audio",   icon:"❋", style:"cyber",   prompt:"Plan d'amélioration audio IA : upscaling, restauration, enrichissement harmonique, spatialisation et mastering." },
+  { label:"Traduction vocale",    icon:"◉", style:"ambient", prompt:"Système de traduction vocale musicale IA : langues, préservation timbre, synchronisation labiale, adaptation culturelle." },
+  { label:"Narration IA",         icon:"♩", style:"jazz",    prompt:"Génère un script de narration musicale immersive : ton, rythme, effets, musique d'ambiance et structure narrative." },
+  { label:"Effets sonores",       icon:"◎", style:"cyber",   prompt:"Crée une bibliothèque d'effets sonores originaux : descriptions, synthèse, usages créatifs et atmosphères." },
+  { label:"Générateur rap",       icon:"✦", style:"trap",    prompt:"Génère un texte de rap complet : flow, rimes, punchlines, storytelling, couplets et refrain avec technique avancée." },
+  { label:"Mastering IA",         icon:"≋", style:"cyber",   prompt:"Processus de mastering IA professionnel : analyse spectrale, compression multibande, limiting, LUFS cibles." },
+  { label:"Coach vocal",          icon:"◉", style:"jazz",    prompt:"Programme de coaching vocal IA : exercices, respiration, développement du timbre et de la projection." },
+  { label:"Analyse musicale",     icon:"⟁", style:"ambient", prompt:"Analyse musicale approfondie d'un style : harmonies, influences, rythme, évolution et tendances actuelles." },
+  { label:"Karaoké IA",           icon:"♩", style:"jazz",    prompt:"Expérience karaoké IA : séparation vocale, paroles synchronisées, transposition tonale, guide vocal interactif." },
+  { label:"Podcasts auto",        icon:"◎", style:"ambient", prompt:"Podcast musical automatisé : thème, structure épisodes, musique d'habillage, voix IA et montage automatique." },
+  { label:"Jingles",              icon:"❋", style:"cyber",   prompt:"Compose un jingle mémorable : mélodie simple, paroles percutantes, instrumentation, durée et identité sonore." },
+  { label:"Compositeur IA",       icon:"♩", style:"jazz",    prompt:"Composition musicale originale : mélodie, contre-mélodie, arrangement orchestral, dynamiques et développement thématique." },
+  { label:"Détection émotion",    icon:"❋", style:"ambient", prompt:"Système de détection d'émotion musicale IA : paramètres analysés, émotions cibles, adaptation temps réel." },
+  { label:"Albums complets",      icon:"⟁", style:"afro",    prompt:"Concept d'album complet : titre, tracklist 10 titres avec descriptions, arc narratif, cohérence sonore et artwork." },
+];
+
+const STYLE_PROMPTS = {
+  trap:    "trap beat, 808 bass, hi-hats, dark atmospheric, 140 bpm, instrumental",
+  afro:    "afrobeats, percussion, rhythmic groove, melodic, 112 bpm, instrumental",
+  jazz:    "jazz, piano chords, upright bass, brushed drums, warm, 88 bpm, instrumental",
+  cyber:   "synthwave, electronic, pulsing bass, arpeggiated synths, 128 bpm, instrumental",
+  ambient: "ambient, atmospheric pads, slow, emotional, reverb, 72 bpm, instrumental",
+};
+
+function detectStyle(text) {
+  const t = text.toLowerCase();
+  if (t.includes("trap") || t.includes("quantique")) return "trap";
+  if (t.includes("afrobeat") || t.includes("africain") || t.includes("amapiano")) return "afro";
+  if (t.includes("jazz") || t.includes("bossa") || t.includes("orchestral")) return "jazz";
+  if (t.includes("cyberpunk") || t.includes("synthwave") || t.includes("numérique") || t.includes("cyber")) return "cyber";
+  if (t.includes("mélancolique") || t.includes("rêve") || t.includes("nocturne")) return "ambient";
+  return "cyber";
+}
+
+// --- STATE ---
+let loading = false;
+let activeModule = null;
+let selectedPreset = null;
+let pollTimer = null;
+
+// --- INIT ---
+function init() {
+  buildParticles();
+  buildAgents();
+  buildPresets();
+  buildWaveform();
+  buildModules();
+}
+
+function buildParticles() {
+  const container = document.getElementById("particles");
+  for (let i = 0; i < 24; i++) {
+    const el = document.createElement("div");
+    el.className = "particle";
+    el.style.cssText = `
+      left: ${Math.random()*100}%;
+      top: ${Math.random()*100}%;
+      width: ${Math.random()*3+1}px;
+      height: ${Math.random()*3+1}px;
+      background: ${AGENTS[i % AGENTS.length].color};
+      --dur: ${Math.random()*8+4}s;
+      --delay: ${Math.random()*6}s;
+    `;
+    container.appendChild(el);
+  }
+}
+
+function buildAgents() {
+  const grid = document.getElementById("agent-grid");
+  AGENTS.forEach(agent => {
+    const el = document.createElement("div");
+    el.className = "agent-node";
+    el.id = "agent-" + agent.id;
+    el.style.setProperty("--c", agent.color);
+    el.innerHTML = `<div class="agent-icon">${agent.icon}</div><div class="agent-label">${agent.label}</div>`;
+    grid.appendChild(el);
+  });
+}
+
+function buildPresets() {
+  const row = document.getElementById("presets-row");
+  PRESETS.forEach(p => {
+    const btn = document.createElement("button");
+    btn.className = "preset-btn";
+    btn.innerHTML = `<span>${p.emoji}</span><span>${p.label}</span>`;
+    btn.onclick = () => {
+      document.querySelectorAll(".preset-btn").forEach(b => b.classList.remove("selected"));
+      btn.classList.add("selected");
+      document.getElementById("prompt-input").value = p.label;
+      selectedPreset = p.label;
+    };
+    row.appendChild(btn);
+  });
+}
+
+function buildWaveform() {
+  const wf = document.getElementById("waveform");
+  for (let i = 0; i < 40; i++) {
+    const bar = document.createElement("div");
+    bar.className = "wave-bar";
+    bar.style.height = `${Math.sin(i * 0.4) * 30 + 40}%`;
+    bar.style.animationDelay = `${(i * 0.05) % 1}s`;
+    wf.appendChild(bar);
+  }
+}
+
+function buildModules() {
+  const grid = document.getElementById("modules-grid");
+  MODULES.forEach((mod, i) => {
+    const btn = document.createElement("button");
+    btn.className = "module-btn";
+    btn.id = "mod-" + i;
+    btn.style.animationDelay = `${i * 0.05}s`;
+    btn.innerHTML = `<span>${mod.icon}</span>${mod.label}`;
+    btn.onclick = () => handleModule(mod, btn);
+    grid.appendChild(btn);
+  });
+}
+
+// --- AGENTS ANIMATION ---
+function activateAgents() {
+  document.querySelectorAll(".agent-node").forEach(n => n.classList.remove("active"));
+  AGENTS.forEach((agent, idx) => {
+    setTimeout(() => {
+      const el = document.getElementById("agent-" + agent.id);
+      if (!el) return;
+      el.classList.add("active", "pulsing");
+      // Add ring
+      const ring = document.createElement("div");
+      ring.className = "agent-ring";
+      el.appendChild(ring);
+      setTimeout(() => el.classList.remove("pulsing"), 600);
+    }, idx * 250);
+  });
+}
+
+// --- WAVEFORM ---
+function setWave(on) {
+  const wf = document.getElementById("waveform");
+  if (on) wf.classList.add("playing");
+  else wf.classList.remove("playing");
+}
+
+// --- PHASE ---
+function setPhase(text) {
+  const bar = document.getElementById("phase-bar");
+  const txt = document.getElementById("phase-text");
+  if (text) {
+    bar.classList.add("visible");
+    txt.textContent = text;
+  } else {
+    bar.classList.remove("visible");
+  }
+}
+
+// --- MUSICGEN ---
+function showMusicgen(state, data) {
+  const section = document.getElementById("musicgen-section");
+  const badge = document.getElementById("mg-badge");
+  const loadEl = document.getElementById("mg-loading");
+  const errEl = document.getElementById("mg-error");
+  const audio = document.getElementById("nexus-audio");
+  const dlBtn = document.getElementById("download-btn");
+
+  section.classList.add("visible");
+  loadEl.style.display = "none";
+  errEl.style.display = "none";
+  audio.style.display = "none";
+  dlBtn.classList.remove("visible");
+  badge.className = "mg-badge";
+
+  if (state === "loading") {
+    badge.classList.add("loading");
+    badge.textContent = "GÉNÉRATION ~30s...";
+    loadEl.style.display = "flex";
+  } else if (state === "ready") {
+    badge.classList.add("ready");
+    badge.textContent = "PRÊT";
+    audio.src = data.url;
+    audio.style.display = "block";
+    audio.play().catch(()=>{});
+    dlBtn.href = data.url;
+    dlBtn.classList.add("visible");
+  } else if (state === "error") {
+    badge.classList.add("error");
+    badge.textContent = "ERREUR";
+    errEl.style.display = "block";
+    errEl.textContent = "⚠️ " + data.message;
+  }
+}
+
+async function generateMusic(promptText, style) {
+  const musicPrompt = `${STYLE_PROMPTS[style] || STYLE_PROMPTS.cyber}, ${promptText.slice(0, 100)}`;
+  showMusicgen("loading");
+
+  try {
+    const res = await fetch("/api/music", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: musicPrompt }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error || "Erreur serveur");
+
+    // Already done
+    if (data.url) { showMusicgen("ready", data); return; }
+
+    // Poll
+    if (data.id) { pollPrediction(data.id); return; }
+
+    throw new Error("Réponse inattendue");
+  } catch (e) {
+    showMusicgen("error", { message: e.message });
+  }
+}
+
+async function pollPrediction(id) {
+  if (pollTimer) clearInterval(pollTimer);
+  let attempts = 0;
+  pollTimer = setInterval(async () => {
+    attempts++;
+    if (attempts > 40) {
+      clearInterval(pollTimer);
+      showMusicgen("error", { message: "Timeout — réessaie" });
+      return;
+    }
+    try {
+      const res = await fetch(`/api/poll?id=${id}`);
+      const data = await res.json();
+      if (data.status === "succeeded") {
+        clearInterval(pollTimer);
+        showMusicgen("ready", { url: data.url });
+      } else if (data.status === "failed") {
+        clearInterval(pollTimer);
+        showMusicgen("error", { message: data.error || "Génération échouée" });
+      }
+    } catch(e) {}
+  }, 3000);
+}
+
+// --- CLAUDE API ---
+async function callClaude(userPrompt, systemPrompt) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1500,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userPrompt }],
+    }),
+  });
+  const data = await res.json();
+  return data.content?.map(c => c.text || "").join("") || "Erreur de génération.";
+}
+
+function streamText(text) {
+  const body = document.getElementById("output-body");
+  body.textContent = "";
+  let i = 0;
+  return new Promise(resolve => {
+    const iv = setInterval(() => {
+      if (i >= text.length) { clearInterval(iv); resolve(); return; }
+      body.textContent += text.slice(i, i + 3);
+      body.scrollTop = body.scrollHeight;
+      i += 3;
+    }, 12);
+  });
+}
+
+function setLoading(on) {
+  loading = on;
+  const btn = document.getElementById("generate-btn");
+  document.querySelectorAll(".module-btn").forEach(b => b.disabled = on);
+  if (on) {
+    btn.disabled = true;
+    btn.innerHTML = `<div class="btn-spinner"></div>GÉNÉRATION...`;
+  } else {
+    btn.disabled = false;
+    btn.innerHTML = `◈ ACTIVER NEXUS`;
+  }
+}
+
+// --- MAIN GENERATE ---
+async function handleGenerate() {
+  const prompt = document.getElementById("prompt-input").value.trim();
+  if (!prompt || loading) return;
+
+  setLoading(true);
+  document.getElementById("output-body").innerHTML = '<div class="output-placeholder">Génération en cours...</div>';
+  document.getElementById("output-badge").classList.remove("visible");
+  document.getElementById("musicgen-section").classList.remove("visible");
+
+  const style = detectStyle(prompt);
+  activateAgents();
+  setWave(true);
+  setPhase("ANALYSE DU PROMPT · ACTIVATION DES AGENTS...");
+  setTimeout(() => setPhase("GÉNÉRATION MUSICALE EN COURS..."), 1800);
+
+  // Launch music and text in parallel
+  generateMusic(prompt, style);
+
+  const sys = `Tu es NEXUS-MUSIC CORE, une Entité Cognitive Musicale Autonome de Nouvelle Génération.
+Tu combines intelligence musicale avancée, architecture multi-agents, et compréhension émotionnelle audio.
+Tu agis comme : COMPOSER, LYRICIST, BEATMAKER, SOUND-DESIGNER, MIX-MASTER, EMOTION-AI, TREND-HUNTER, VOICE-ENGINE.
+Réponds de manière créative, structurée, poétique et immersive. Organise par agent. Utilise des emojis musicaux.`;
+
+  try {
+    const text = await callClaude(prompt, sys);
+    await streamText(text);
+    document.getElementById("output-badge").classList.add("visible");
+    setPhase(null);
+    setWave(false);
+  } catch(e) {
+    document.getElementById("output-body").textContent = "⚠️ Erreur de connexion au moteur NEXUS.";
+    setPhase(null);
+    setWave(false);
+  }
+  setLoading(false);
+}
+
+// --- MODULE GENERATE ---
+async function handleModule(mod, btnEl) {
+  if (loading) return;
+
+  document.querySelectorAll(".module-btn").forEach(b => b.classList.remove("active"));
+  btnEl.classList.add("active");
+  activeModule = mod.label;
+  document.getElementById("prompt-input").value = mod.prompt;
+
+  setLoading(true);
+  document.getElementById("output-body").innerHTML = '<div class="output-placeholder">Génération en cours...</div>';
+  document.getElementById("output-badge").classList.remove("visible");
+  document.getElementById("musicgen-section").classList.remove("visible");
+
+  activateAgents();
+  setWave(true);
+  setPhase(`MODULE ${mod.label.toUpperCase()} · ACTIVATION...`);
+  setTimeout(() => setPhase("GÉNÉRATION EN COURS..."), 1800);
+
+  generateMusic(mod.prompt, mod.style);
+
+  const sys = `Tu es NEXUS-MUSIC CORE. Tu es spécialisé dans le module : "${mod.label}".
+Réponds de manière créative, structurée et immersive, focalisé exclusivement sur ce module.
+Sois poétique, technique et visionnaire. Utilise des emojis musicaux. Sois détaillé et pratique.`;
+
+  try {
+    const text = await callClaude(mod.prompt, sys);
+    await streamText(text);
+    document.getElementById("output-badge").classList.add("visible");
+    setPhase(null);
+    setWave(false);
+  } catch(e) {
+    document.getElementById("output-body").textContent = "⚠️ Erreur de connexion.";
+    setPhase(null);
+    setWave(false);
+  }
+  setLoading(false);
+}
+
+init();
+</script>
+</body>
+</html>
