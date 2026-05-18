@@ -9,14 +9,20 @@ export default async function handler(req, res) {
   const { prompt } = req.body;
   if (!prompt) return res.status(400).json({ error: "Prompt manquant" });
   try {
-    const r = await fetch("https://api.replicate.com/v1/models/meta/musicgen/predictions", {
+    const r = await fetch("https://api.replicate.com/v1/predictions", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${KEY}`, "Prefer": "wait=60" },
-      body: JSON.stringify({ input: { prompt, model_version: "stereo-large", output_format: "mp3", duration: 30, temperature: 1, top_k: 250, top_p: 0, classifier_free_guidance: 3, continuation: false } }),
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${KEY}` },
+      body: JSON.stringify({
+        version: "671ac645ce5e552cc63a54a2bbff63fcf798043055d2dac5fc9e36a837eedcfb",
+        input: { prompt, duration: 30, output_format: "mp3" }
+      }),
     });
     if (!r.ok) { const e = await r.json(); return res.status(r.status).json({ error: e.detail || "Erreur" }); }
     const p = await r.json();
-    if (p.status === "succeeded") { const url = Array.isArray(p.output) ? p.output[0] : p.output; return res.status(200).json({ url }); }
+    if (p.status === "succeeded") {
+      const url = Array.isArray(p.output) ? p.output[0] : p.output;
+      return res.status(200).json({ url });
+    }
     return res.status(202).json({ id: p.id });
   } catch(e) { return res.status(500).json({ error: e.message }); }
 }
